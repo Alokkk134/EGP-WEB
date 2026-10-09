@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EGP notebook pages</title>
+<style>
+@font-face{font-family:'Instrument Serif';font-weight:400;src:url(../assets/fonts/instrument-serif.woff2) format('woff2')}
+@font-face{font-family:'Newsreader';font-weight:200 600;src:url(../assets/fonts/newsreader.woff2) format('woff2')}
+@font-face{font-family:'Caveat';font-weight:400;src:url(../assets/fonts/caveat-400.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:'Caveat';font-weight:700;src:url(../assets/fonts/caveat-700.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:'Caveat';font-weight:400;src:url(../assets/fonts/caveat-ext-400.woff2) format('woff2');
+  unicode-range:U+0100-02AF,U+20A0-20AB,U+20AD-20C0}
+@font-face{font-family:'Caveat';font-weight:700;src:url(../assets/fonts/caveat-ext-700.woff2) format('woff2');
+  unicode-range:U+0100-02AF,U+20A0-20AB,U+20AD-20C0}
+body{margin:0;padding:24px;background:#3b3a36;color:#eee;font:14px system-ui,sans-serif}
+.grid{display:grid;grid-template-columns:repeat(var(--cols,1),minmax(0,1fr));gap:16px}
+figure{margin:0}
+canvas{width:100%;height:auto;display:block;background:#2a2926}
+figcaption{padding:6px 2px 0;opacity:.75}
+</style>
+</head>
+<body>
+<!-- Every spread of the notebook at once.  Open after editing js/data.js
+     to check that names, marks and fees fit their pages.
+     ?cols=2 shows two per row; ?only=3 shows a single spread. -->
+<div class="grid" id="grid"></div>
+<script src="../js/data.js"></script>
+<script src="../js/spreads.js"></script>
+<script>
+(async () => {
+  const q = new URLSearchParams(location.search);
+  const grid = document.getElementById('grid');
+  grid.style.setProperty('--cols', q.get('cols') || 1);
+  const all = await drawSpreadCanvases(EGP, '../assets/img/egp-mark.svg');
+  all.forEach((s, i) => {
+    if (q.has('only') && +q.get('only') !== i) return;
+    const f = document.createElement('figure');
+    const cap = document.createElement('figcaption');
+    cap.textContent = String(i + 1).padStart(2, '0') + ' · ' + s.title;
+    f.append(s.canvas, cap); grid.append(f);
+  });
+  document.body.dataset.ready = '1';
+})();
+</script>
+</body>
+</html>
