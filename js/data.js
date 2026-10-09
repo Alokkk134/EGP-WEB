@@ -32,6 +32,36 @@ window.EGP = {
     'quality of teaching that big-city coaching sells for lakhs. Small batches, teachers who know every ' +
     'student by name, a test every week, and fees a family can actually pay. The results are in the notebook above.',
 
+  /* the founder — his section on the page and his note in the notebook.
+     The name, subject and photo are real; the story, numbers, quote and
+     letter are DEMO text to be confirmed with him. */
+  founder: {
+    name: 'Amritesh Sir',
+    role: 'Founder · Physics',
+    since: 2014,
+    photo: 'assets/img/amritesh-sir.jpg',
+    story: [
+      'Amritesh Sir started Education Galaxy Point in 2014 with one classroom in Chas and a simple belief: ' +
+      'a student\'s result should depend on how hard they work, not on how much their family can pay.',
+      'He still teaches every Physics batch himself — from Class 11 mechanics to Class 12 optics and modern ' +
+      'physics, for the boards and for JEE / NEET. His classes slow down exactly where textbooks rush: every ' +
+      'formula is derived on the board, every diagram is drawn live, and nobody leaves with a doubt they were afraid to ask.'
+    ],
+    quote: 'Physics is never difficult. It has only been explained too fast.',
+    forces: ['Patience', 'Clarity', 'Discipline', 'Belief'],
+    net: 'Net force: always towards the student',
+    equation: 'Result = (Concept × Practice) ÷ Fear',
+    equationNote: 'on the board, on the first day of every batch',
+    stats: [
+      ['12+', 'years teaching Physics'],
+      ['2,400+', 'students taught since 2014'],
+      ['Every day', 'he stays back for the doubt hour']
+    ],
+    letter:
+      'The most important thing I teach is not a formula. It is that a hard chapter is only a chapter ' +
+      'that hasn\'t been explained slowly enough yet. So bring your doubts — all of them. That is exactly what we are here for.'
+  },
+
   why: [
     ['Fees a family can afford', 'A full year of Class 12 Science costs less than two months at a big-city institute.'],
     ['Small batches', 'Never more than 40 students, so every doubt gets asked — and answered.'],
@@ -159,7 +189,7 @@ window.EGP = {
   ],
 
   faculty: [
-    { name: 'R. K. Sinha', subject: 'Physics', note: 'M.Sc. Physics · 18 years teaching' },
+    { name: 'Amritesh Sir', subject: 'Physics · Founder', note: 'Teaches every Physics batch himself', photo: 'assets/img/amritesh-sir.jpg' },
     { name: 'Anjali Mishra', subject: 'Chemistry', note: 'M.Sc. Chemistry · 12 years teaching' },
     { name: 'Sunil Kumar', subject: 'Mathematics', note: 'M.Sc. Mathematics · 15 years teaching' },
     { name: 'Neha Prasad', subject: 'Biology', note: 'M.Sc. Zoology · 10 years teaching' },

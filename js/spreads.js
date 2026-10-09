@@ -276,6 +276,36 @@
     date(x, 'Chas · ' + D.resultYear, X1 - 48, Y1 - 34);
   }
 
+  /* a letter from the founder, with his photograph taped in */
+  function founderNote(x, D, A) {
+    const F = D.founder;
+    ruled(x, Rp);
+    text(x, 'From the founder\'s desk', L.x + 74, Y0 + 66, { size: 32, color: C.pencil });
+    polaroid(x, L.x + 228, Y0 + 368, 300, 368, -0.05, {
+      photo: A.founder, initials: initials(F.name), tint: [96, 120, 168], seed: 77, caption: F.name
+    });
+    const nx = L.x + 418;
+    text(x, F.name.split(' ')[0], nx, Y0 + 262, { font: SERIF, size: 66 });
+    text(x, F.name.split(' ').slice(1).join(' '), nx, Y0 + 324, { font: SERIF, size: 66 });
+    text(x, F.role, nx, Y0 + 380, { size: 34, color: C.soft });
+    text(x, 'teaching since ' + F.since, nx, Y0 + 422, { size: 32, color: C.pencil });
+    arrow(x, nx + 120, Y0 + 520, L.x + 392, Y0 + 452);
+    text(x, 'the man behind', nx + 64, Y0 + 556, { size: 34, weight: 700, color: C.red, rot: -0.03 });
+    text(x, 'the results', nx + 84, Y0 + 594, { size: 34, weight: 700, color: C.red, rot: -0.03 });
+    star(x, G - 64, Y0 + 210, 16);
+
+    const rx = Rp.x + 100;
+    text(x, 'Dear student,', rx, Y0 + 80, { size: 46, weight: 700 });
+    const n = para(x, F.letter, rx, Y0 + 150, 530, 48, { size: 38, color: C.soft });
+    const sy = Y0 + 150 + n * 48 + 34;
+    const sw = text(x, '— ' + F.name, rx + 230, sy, { size: 46, weight: 700, color: C.red, rot: -0.04 });
+    squiggle(x, rx + 230, sy + 16, sw, C.red, 9);
+    const eq = F.equation;
+    text(x, eq, rx, Y1 - 78, { size: 36, weight: 700, rot: -0.01 });
+    underline(x, rx, Y1 - 62, measure(x, eq, 36, HAND, 700), C.ink, 2);
+    date(x, 'CHAS · ' + D.resultYear, X1 - 48, Y1 - 30);
+  }
+
   function topper(x, D, A, t, n) {
     ruled(x, Rp);
     text(x, 'Toppers · ' + t.year, L.x + 74, Y0 + 66, { size: 32, color: C.pencil });
@@ -471,12 +501,17 @@
     }
     const A = { logo: await load(logoSrc), photos: {} };
     await Promise.all(D.featured.filter(t => t.photo).map(async t => { A.photos[t.name] = await load(t.photo); }));
+    if (D.founder && D.founder.photo) A.founder = await load(D.founder.photo);
 
     const pages = [];
     const add = (draw, meta) => pages.push({ draw, ...meta });
     add((x) => cover(x, D, A), {
       title: D.short + ' Results Diary · ' + D.resultYear, place: 'Cover',
       alt: D.name + ' results diary ' + D.resultYear + ': ' + D.stats.map(s => s.value + ' ' + s.label).join('; ')
+    });
+    if (D.founder) add((x) => founderNote(x, D, A), {
+      title: 'A Note from ' + D.founder.name, place: D.founder.role,
+      alt: 'A handwritten note from ' + D.founder.name + ', founder of ' + D.name + ': ' + D.founder.letter
     });
     D.featured.forEach((t, i) => {
       const total = t.marks.reduce((a, m) => a + m[1], 0), pct = (total / t.marks.length).toFixed(1) + '%';
