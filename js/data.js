@@ -79,7 +79,7 @@ window.EGP = {
     { value: '11',   label: 'students qualified NEET 2025' }
   ],
 
-  /* one notebook spread per featured topper */
+  /* one notebook page per featured topper, two to a spread */
   featured: [
     {
       name: 'Aditi Kumari', stream: 'Class 12 · Science (PCM)', board: 'CBSE', year: 2025,
@@ -115,6 +115,13 @@ window.EGP = {
       marks: [['Physics', 95], ['Chemistry', 96], ['Biology', 99], ['English', 93], ['Hindi', 96]],
       quote: 'Small batches meant I was never too shy to ask the same doubt twice.',
       photo: null, tint: [186, 150, 80]
+    },
+    {
+      name: 'Saurav Kumar', stream: 'Class 12 · Science (PCM)', board: 'JAC', year: 2025,
+      school: 'Govt. +2 School, Chas', highlight: 'JEE Main 98.9 percentile',
+      marks: [['Physics', 96], ['Chemistry', 95], ['Mathematics', 99], ['English', 92], ['Hindi', 96]],
+      quote: 'Daily practice sheets did more for me than any guide book.',
+      photo: null, tint: [150, 110, 170]
     }
   ],
 

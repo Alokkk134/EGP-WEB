@@ -13,7 +13,7 @@
   const Rp = { x: G, w: X1 - G };          /* right page */
 
   const C = {
-    ink: '#1f2a44', soft: 'rgba(31,42,68,.72)', pencil: '#736b5c',
+    ink: '#1f2a44', soft: 'rgba(31,42,68,.88)', pencil: '#5b5446',
     red: '#b3362b', gold: '#c08a2c', rule: 'rgba(78,112,160,.17)', margin: 'rgba(190,64,52,.26)'
   };
   const HAND = '"Caveat", "Segoe Print", cursive';
@@ -101,6 +101,11 @@
     x.globalAlpha = o.alpha == null ? 1 : o.alpha;
     x.textAlign = o.align || 'left';
     x.textBaseline = 'alphabetic';
+    /* a little pen pressure: the regular-weight hand and the slender serif
+       get a thin stroke of their own ink so they read firmly at phone size */
+    const size = o.size || 36, font = o.font || HAND;
+    const press = font === HAND ? ((o.weight || 400) >= 700 ? 0 : size * 0.03) : font === SERIF ? size * 0.014 : 0;
+    if (press) { x.strokeStyle = x.fillStyle; x.lineWidth = press; x.lineJoin = 'round'; x.strokeText(s, 0, 0); }
     x.fillText(s, 0, 0);
     const m = x.measureText(s).width;
     x.restore();
@@ -201,7 +206,7 @@
     x.restore();
   }
   function date(x, s, px, py) {
-    x.save(); x.font = '500 22px "Newsreader", Georgia, serif'; x.fillStyle = 'rgba(60,52,40,.7)';
+    x.save(); x.font = '600 22px "Newsreader", Georgia, serif'; x.fillStyle = 'rgba(52,44,32,.88)';
     x.textAlign = 'right'; x.letterSpacing = '3px'; x.fillText(s.toUpperCase(), px, py); x.restore();
   }
   function stamp(x, logo, px, py, s) {
@@ -306,55 +311,73 @@
     date(x, 'CHAS · ' + D.resultYear, X1 - 48, Y1 - 30);
   }
 
-  function topper(x, D, A, t, n) {
-    ruled(x, Rp);
-    text(x, 'Toppers · ' + t.year, L.x + 74, Y0 + 66, { size: 32, color: C.pencil });
-    text(x, 'No. ' + String(n).padStart(2, '0'), G - 54, Y0 + 66, { size: 32, color: C.pencil, align: 'right' });
+  /* One topper to a page: their photograph, who they are, and their marks
+     with the total and percentage, so that on a phone, which shows one
+     page at a time, each screen is one student. */
+  function session(y) { return (y - 1) + '–' + String(y).slice(2); }
+  function studentPage(x, page, t, n, A) {
+    ruled(x, page);
+    const cl = page.x + 100, cr = page.x + page.w - 56;
+    text(x, 'Toppers · ' + t.year, cl, Y0 + 62, { size: 28, color: C.pencil });
+    text(x, 'No. ' + String(n).padStart(2, '0'), cr, Y0 + 62, { size: 28, color: C.pencil, align: 'right' });
 
-    polaroid(x, L.x + 228, Y0 + 368, 300, 368, -0.055, {
+    polaroid(x, cl + 112, Y0 + 246, 224, 274, n % 2 ? -0.045 : 0.04, {
       photo: A.photos[t.name], initials: initials(t.name), tint: t.tint, seed: n * 13, caption: t.name.split(' ')[0]
     });
 
-    const nx = L.x + 418, nw = G - nx - 46;
-    let y = Y0 + 250;
-    const nameLines = wrap(x, t.name, nw, 62, SERIF);
-    nameLines.forEach(ln => { text(x, ln, nx, y, { font: SERIF, size: 62 }); y += 60; });
-    y += 4;
-    text(x, t.stream, nx, y, { size: 33, color: C.soft }); y += 42;
-    text(x, t.board + ' · ' + t.year, nx, y, { size: 33, color: C.soft }); y += 42;
-    y += para(x, t.school, nx, y, nw, 38, { size: 30, color: C.pencil }) * 38 + 30;
-    const hl = wrap(x, t.highlight, nw, 40, HAND, 700);
-    hl.forEach(ln => { text(x, ln, nx, y, { size: 40, weight: 700, color: C.red, rot: -0.02 }); y += 44; });
-    squiggle(x, nx, y - 28, Math.min(nw, measure(x, hl[hl.length - 1], 40, HAND, 700)), C.red, n);
-    star(x, G - 70, Y0 + 210, 16);
+    /* who they are */
+    /* the details start level with the photo's middle, leaving the page's
+       top corner free for the magnifier to rest on */
+    const ni = cl + 262, nw = cr - ni;
+    let y = Y0 + 200;
+    wrap(x, t.name, nw, 52, SERIF).forEach(ln => { text(x, ln, ni, y, { font: SERIF, size: 52 }); y += 50; });
+    y += 2;
+    text(x, t.stream, ni, y, { size: 29, color: C.soft }); y += 38;
+    text(x, t.board + ' · Session ' + session(t.year), ni, y, { size: 29, color: C.soft }); y += 38;
+    y += para(x, t.school, ni, y, nw, 33, { size: 26, color: C.pencil }) * 33 + 16;
+    const hl = wrap(x, t.highlight, nw, 33, HAND, 700);
+    hl.forEach(ln => { text(x, ln, ni, y, { size: 33, weight: 700, color: C.red, rot: -0.02 }); y += 37; });
+    squiggle(x, ni, y - 24, Math.min(nw, measure(x, hl[hl.length - 1], 33, HAND, 700)), C.red, n);
 
-    /* the marks card */
-    const rx = Rp.x + 100;
-    text(x, 'Marks card', rx, Y0 + 72, { size: 46, weight: 700 });
-    underline(x, rx, Y0 + 84, measure(x, 'Marks card', 46, HAND, 700) + 10, C.ink, 2.2);
-    text(x, t.board + ' ' + t.year, X1 - 64, Y0 + 72, { size: 30, color: C.pencil, align: 'right' });
+    /* their marks, in two columns */
+    const my = Math.max(Y0 + 432, y + 28), colW = (cr - cl) / 2, rows = Math.ceil(t.marks.length / 2);
     let total = 0;
-    const ROW = 64;
     t.marks.forEach(([sub, m], i) => {
-      const yy = Y0 + 150 + i * ROW;
       total += m;
-      text(x, sub, rx, yy, { size: 40 });
-      x.save(); x.fillStyle = 'rgba(31,42,68,.35)';
-      for (let d = rx + measure(x, sub, 40) + 18; d < Rp.x + 470; d += 14) x.fillRect(d, yy - 6, 3, 3);
+      const c = i < rows ? 0 : 1, r = i < rows ? i : i - rows;
+      const sx = cl + c * colW, sy = my + r * 48, end = sx + colW - (c ? 40 : 52);
+      text(x, sub, sx, sy, { size: 29 });
+      x.save(); x.fillStyle = 'rgba(31,42,68,.3)';
+      for (let d = sx + measure(x, sub, 29) + 10; d < end - 48; d += 12) x.fillRect(d, sy - 5, 2.5, 2.5);
       x.restore();
-      text(x, String(m), Rp.x + 545, yy, { size: 46, weight: 700, align: 'right' });
-      text(x, '/100', Rp.x + 552, yy, { size: 26, color: C.pencil });
-      tick(x, Rp.x + 625, yy - 14, 30);
+      text(x, String(m), end, sy, { size: 34, weight: 700, align: 'right' });
+      tick(x, end + 10, sy - 11, 22);
     });
-    const ty = Y0 + 150 + t.marks.length * ROW - 18;
-    x.save(); stroke(x, C.ink, 1.8, 0.5); x.beginPath(); x.moveTo(rx, ty); x.lineTo(Rp.x + 470, ty); x.stroke(); x.restore();
-    text(x, 'Total ' + total + ' / ' + t.marks.length * 100, rx, ty + 50, { size: 40, weight: 700 });
-    const pct = (total / t.marks.length).toFixed(1) + '%';
-    const pw = text(x, pct, Rp.x + 610, ty + 66, { size: 84, weight: 700, color: C.red, align: 'center', rot: -0.04 });
-    ring(x, Rp.x + 610, ty + 38, pw / 2 + 34, 58, n * 7);
 
-    para(x, '“' + t.quote + '”', rx, Y1 - 76, 450, 34, { size: 31, color: C.soft, rot: -0.005 });
-    date(x, 'MAY ' + (10 + n) + ' ' + t.year, X1 - 48, Y1 - 34);
+    /* the total, and the percentage ringed in red pen */
+    const by = Y1 - 52;
+    x.save(); stroke(x, C.ink, 1.6, 0.45); x.beginPath(); x.moveTo(cl, by - 50); x.lineTo(cr - 240, by - 50); x.stroke(); x.restore();
+    text(x, 'Total ' + total + ' / ' + t.marks.length * 100, cl, by, { size: 34, weight: 700 });
+    const pct = (total / t.marks.length).toFixed(1) + '%';
+    const pw = text(x, pct, cr - 112, by + 4, { size: 76, weight: 700, color: C.red, align: 'center', rot: -0.04 });
+    ring(x, cr - 112, by - 22, pw / 2 + 28, 52, n * 7);
+  }
+
+  /* the spare page beside an odd last topper */
+  function nextYearPage(x, page, D) {
+    ruled(x, page);
+    const cl = page.x + 100;
+    text(x, 'Toppers · ' + (D.resultYear + 1), cl, Y0 + 62, { size: 28, color: C.pencil });
+    polaroid(x, cl + 112, Y0 + 246, 224, 274, 0.04, { empty: true });
+    text(x, 'Your name', cl + 262, Y0 + 200, { font: SERIF, size: 52 });
+    text(x, 'could be here.', cl + 262, Y0 + 252, { font: SERIF, size: 52 });
+    text(x, 'Admissions open · Session ' + D.session, cl, Y1 - 60, { size: 32, weight: 700, color: C.red, rot: -0.02 });
+  }
+
+  function topperSpread(x, D, A, pair, n0) {
+    studentPage(x, L, pair[0], n0, A);
+    if (pair[1]) studentPage(x, Rp, pair[1], n0 + 1, A);
+    else nextYearPage(x, Rp, D);
   }
 
   function chart(x, D) {
@@ -469,18 +492,52 @@
     });
   };
 
-  window.buildSpreads = async function (D, logoSrc) {
-    const { pages } = await prepare(D, logoSrc);
+  /* The book as the engine turns it.
+     Desktop: one image per spread, both pages side by side.
+     Phone (single = true): one image per PAGE.  The page being read is
+     drawn on the right-hand side of a spread whose left side is left blank,
+     and the phone shows only that right-hand side; so turning the page
+     uses the very same curl, the leaf lifting off and away to the left to
+     reveal the next page underneath, with no sliding.
+     Each page also says which index rows it carries ("rows"). */
+  window.buildSpreads = async function (D, logoSrc, single) {
+    const { pages: spreads } = await prepare(D, logoSrc);
+    const p = paper();
+    let pages;
+    if (!single) {
+      pages = spreads;
+      pages.forEach(pg => { pg.rows = pg.people || [{ title: pg.title, place: pg.place }]; });
+    } else {
+      pages = [];
+      spreads.forEach(sp => [0, 1].forEach(h => {
+        const who = sp.people ? sp.people[h] : null;
+        if (sp.people && !who) {
+          pages.push({ sp, h, title: 'Your name could be here', alt: 'Your name could be here next year.', rows: [] });
+        } else if (who) {
+          pages.push({ sp, h, title: who.title, alt: who.alt, rows: [who] });
+        } else {
+          pages.push({ sp, h, title: sp.title, alt: sp.alt, rows: h ? [] : [{ title: sp.title, place: sp.place, span: 1 }] });
+        }
+      }));
+    }
+
     /* The cover is drawn first so the book can open at once; the rest
        follow one at a time, yielding between them so the page stays
        responsive on a slow phone. */
-    const p = paper();
+    let ink = null;   /* the spread last drawn without its paper, for single pages */
     const render = async pg => {
       const c = canvas(), x = c.getContext('2d');
       x.drawImage(p, 0, 0);
-      pg.draw(x);
+      if (!single) pg.draw(x);
+      else {
+        if (!ink || ink.sp !== pg.sp) {
+          const ic = canvas(); pg.sp.draw(ic.getContext('2d')); ink = { sp: pg.sp, c: ic };
+        }
+        /* lift this page's ink off its own side and set it on the right */
+        x.drawImage(ink.c, pg.h ? Rp.x : L.x, 0, L.w, H, Rp.x, 0, L.w, H);
+      }
       pg.url = await toURL(c);
-      delete pg.draw;
+      delete pg.draw; delete pg.sp;
     };
     await render(pages[0]);
     const done = (async () => {
@@ -488,6 +545,7 @@
         await new Promise(r => setTimeout(r, 0));
         await render(pg);
       }
+      ink = null;
       return pages;
     })();
     return { pages, done };
@@ -513,13 +571,21 @@
       title: 'A Note from ' + D.founder.name, place: D.founder.role,
       alt: 'A handwritten note from ' + D.founder.name + ', founder of ' + D.name + ': ' + D.founder.letter
     });
-    D.featured.forEach((t, i) => {
-      const total = t.marks.reduce((a, m) => a + m[1], 0), pct = (total / t.marks.length).toFixed(1) + '%';
-      add((x) => topper(x, D, A, t, i + 1), {
-        title: t.name + ' — ' + pct, place: pct + ' · ' + t.board + ' ' + t.year,
-        alt: t.name + ', ' + t.stream + ', ' + t.board + ' ' + t.year + ': ' + pct + '. ' + t.highlight + '.'
+    /* toppers, two to a spread; each still gets its own line in the index */
+    const pctOf = t => (t.marks.reduce((a, m) => a + m[1], 0) / t.marks.length).toFixed(1) + "%";
+    for (let i = 0; i < D.featured.length; i += 2) {
+      const pair = D.featured.slice(i, i + 2), n0 = i + 1;
+      const people = pair.map(t => ({
+        title: t.name + " — " + pctOf(t), place: pctOf(t) + " · " + t.board + " " + t.year,
+        alt: t.name + ", " + t.stream + ", " + t.board + " session " + session(t.year) + ": " +
+          t.marks.map(m => m[0] + " " + m[1]).join(", ") + "; " + pctOf(t) + ". " + t.highlight + "."
+      }));
+      add((x) => topperSpread(x, D, A, pair, n0), {
+        title: pair.map(t => t.name + " " + pctOf(t)).join(" · "),
+        place: pair.map(pctOf).join(" · "),
+        people, alt: people.map(q => q.alt).join(" ")
       });
-    });
+    }
     add((x) => chart(x, D), {
       title: 'Five Years of Results', place: D.history[0].year + '–' + D.history[D.history.length - 1].year,
       alt: 'Students scoring 90% and above: ' + D.history.map(h => h.year + ' — ' + h.above90).join(', ')

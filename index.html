@@ -49,8 +49,8 @@
 :root{
   --paper:#ece7dc;
   --ink:#1f2a44;
-  --ink-soft:rgba(31,42,68,.62);
-  --ink-faint:rgba(31,42,68,.40);
+  --ink-soft:rgba(31,42,68,.8);
+  --ink-faint:rgba(31,42,68,.6);
   --hairline:rgba(31,42,68,.14);
   --earth:#b3362b;
   --gold:#c08a2c;
@@ -66,7 +66,7 @@ html{-webkit-text-size-adjust:100%;scroll-padding-top:110px}
 section[id]:not(.hero){scroll-margin-top:140px}
 @media (max-width:640px){section[id]:not(.hero){scroll-margin-top:104px}}
 body{
-  font-family:var(--font);font-weight:400;background:var(--paper);color:var(--ink);
+  font-family:var(--font);font-weight:440;background:var(--paper);color:var(--ink);
   -webkit-font-smoothing:antialiased;overflow-x:hidden;
 }
 a{color:inherit;text-decoration:none}
@@ -164,7 +164,7 @@ main.page{position:relative;overflow-x:clip}
   border-left:1px solid var(--hairline);padding-left:10px;margin-left:2px}
 .top nav{
   display:flex;gap:clamp(14px,2vw,26px);font-size:15px;align-items:center;
-  letter-spacing:var(--track-nav);font-weight:300;
+  letter-spacing:var(--track-nav);font-weight:500;
 }
 .top nav a{color:var(--ink-soft);transition:color .2s}
 .top nav a:hover,.top nav a[aria-current]{color:var(--ink)}
@@ -194,7 +194,7 @@ main.page{position:relative;overflow-x:clip}
   padding:clamp(112px,13svh,152px) 0 clamp(72px,10svh,120px);
 }
 .hero-kicker{
-  font-size:12px;font-weight:400;letter-spacing:var(--track-caps);text-align:center;
+  font-size:12.5px;font-weight:600;letter-spacing:var(--track-caps);text-align:center;
   color:var(--ink-soft);margin:0 0 clamp(22px,3.4vh,40px);text-transform:uppercase;padding:0 16px;
 }
 .hero-down{
@@ -218,7 +218,7 @@ main.page{position:relative;overflow-x:clip}
 .sb-arrow{
   flex:none;display:inline-flex;align-items:center;justify-content:center;padding:6px 2px;
   border:0;background:transparent;color:var(--ink-faint);cursor:pointer;transition:color .2s;
-  -webkit-tap-highlight-color:transparent;z-index:8;
+  -webkit-tap-highlight-color:transparent;z-index:90;position:relative;
 }
 .sb-arrow:hover{color:var(--ink)}
 
@@ -436,7 +436,16 @@ main.page{position:relative;overflow-x:clip}
   font-size:11px;letter-spacing:.1em;color:var(--ink-faint);
   min-width:40px;text-align:center;font-variant-numeric:tabular-nums;
 }
-@media (pointer:coarse){.loupe,.zoomwrap,#loupeBtn,.tool-sep{display:none}}
+/* the glass is dragged by finger too, so a touch on it must not scroll */
+.loupe .ring,.loupe .grip{touch-action:none}
+/* a handwritten nudge beside the glass until someone picks it up */
+.loupe-tag{
+  position:absolute;right:62%;top:96%;white-space:nowrap;pointer-events:none;
+  font-family:var(--hand);font-weight:700;font-size:21px;color:var(--earth);
+  transform:rotate(-7deg);transition:opacity .5s ease;
+}
+.loupe.used .loupe-tag,.sb-wrap.intro .loupe-tag{opacity:0}
+.sb-pages{display:none}
 
 .sb-zone{position:absolute;top:0;bottom:0;border:0;background:transparent;cursor:grab;z-index:60;-webkit-tap-highlight-color:transparent}
 .sb-zone:active{cursor:grabbing}
@@ -451,7 +460,7 @@ main.page{position:relative;overflow-x:clip}
 @keyframes sb-cap-in{0%{opacity:0}}
 @keyframes sb-cap-out{to{opacity:0}}
 .sb-hint{
-  margin:0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);
+  margin:0;font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);
   transition:opacity .4s ease;
 }
 .sb-hint.gone{opacity:0}
@@ -462,11 +471,25 @@ main.page{position:relative;overflow-x:clip}
 @media (max-width:640px){
   .hero-kicker{font-size:10.5px;letter-spacing:.16em}
   .sb-wrap{width:100vw;margin-inline:calc(50% - 50vw)}
-  .sb-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:70;padding:12px 6px}
+  .sb-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:90;padding:12px 6px}
   .sb-arrow.left{left:2px}
   .sb-arrow.right{right:2px}
   .sb-3d{max-width:none}
   .sb-hint{font-size:9.5px;letter-spacing:.1em;padding:0 16px;text-align:center}
+  /* A single-page book.  The book is drawn twice the screen's width so one
+     page fills it, and shifted so only its right-hand page shows; each
+     phone page is drawn on that side (spreads.js), so a turn is the plain
+     curl with nothing sliding.  The negative margins take back the empty
+     band above and below the paper.  (fitBook in the script does the shift.) */
+  .sb-wrap{grid-template-columns:minmax(0,1fr)}
+  .sb-stage{justify-content:flex-start;overflow-x:clip;min-width:0}
+  .sb-3d{flex:none;width:206vw;margin:-27vw 0 -25vw;will-change:transform}
+  .sb-arrow{color:var(--ink-soft);background:rgba(250,246,238,.7);border-radius:999px;padding:10px 4px}
+  .sb-arrow.left{left:4px}
+  .sb-arrow.right{right:4px}
+  .sb-pages{display:block;margin:-8px 0 0;font-family:var(--hand);font-size:17px;color:var(--ink-soft);text-align:center}
+  #zOut,#zIn,.zoom-read,.tool-sep{display:none}
+  .loupe-tag{display:none}
 }
 
 /* ---------------- painted rules + sections ---------------- */
@@ -478,8 +501,8 @@ main.page{position:relative;overflow-x:clip}
 }
 .rule.short{width:min(420px,52vw);opacity:.4}
 .section-label{
-  font-size:11px;letter-spacing:var(--track-caps);text-transform:uppercase;
-  color:var(--ink-faint);margin:0 0 18px;
+  font-size:12px;font-weight:600;letter-spacing:var(--track-caps);text-transform:uppercase;
+  color:var(--ink-soft);margin:0 0 18px;
 }
 .section-title{font-family:var(--display);font-weight:400;font-size:clamp(30px,3.6vw,44px);line-height:1.1;margin:0 0 22px;letter-spacing:.005em}
 .section-title em{font-style:italic;color:var(--earth)}
@@ -490,7 +513,7 @@ main.page{position:relative;overflow-x:clip}
   padding:0 clamp(20px,5vw,48px);
   display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(24px,5vw,60px);align-items:start;
 }
-.bio{font-size:clamp(17px,1.7vw,20px);line-height:1.74;letter-spacing:.005em;margin:0;font-weight:300;max-width:56ch}
+.bio{font-size:clamp(17px,1.7vw,20px);line-height:1.74;letter-spacing:.005em;margin:0;font-weight:440;max-width:56ch}
 .bio-link{color:var(--ink);text-decoration:underline;text-decoration-color:rgba(31,42,68,.28);
   text-underline-offset:4px;transition:text-decoration-color .2s}
 .bio-link:hover{text-decoration-color:var(--ink)}
@@ -498,7 +521,7 @@ main.page{position:relative;overflow-x:clip}
 .why{list-style:none;margin:34px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 40px;max-width:760px}
 .why li{border-top:1px solid var(--hairline);padding-top:14px}
 .why b{display:block;font-family:var(--display);font-weight:400;font-size:clamp(20px,2vw,24px);margin-bottom:4px}
-.why span{font-size:15.5px;line-height:1.6;color:var(--ink-soft);font-weight:300}
+.why span{font-size:15.5px;line-height:1.6;color:var(--ink-soft);font-weight:440}
 @media (max-width:760px){
   .about{grid-template-columns:1fr}
   .bloom{width:150px;justify-self:center;grid-row:1}
@@ -511,7 +534,7 @@ main.page{position:relative;overflow-x:clip}
 /* the photograph stays in view while his story scrolls past it */
 .fb{margin:0;position:sticky;top:130px}
 .fb svg{display:block;width:100%;max-width:470px;height:auto;margin:0 auto;overflow:visible}
-.fstory p{font-size:clamp(17px,1.6vw,19px);line-height:1.72;font-weight:300;margin:0 0 14px;max-width:56ch}
+.fstory p{font-size:clamp(17px,1.6vw,19px);line-height:1.72;font-weight:440;margin:0 0 14px;max-width:56ch}
 .pull{margin:26px 0 26px;padding:2px 0 2px 22px;border-left:2px solid var(--earth)}
 .pull p{font-family:var(--display);font-style:italic;font-size:clamp(24px,2.6vw,32px);line-height:1.25;margin:0;letter-spacing:.005em}
 .sig{display:inline-block;margin-top:10px;font-family:var(--hand);font-weight:700;font-size:32px;color:var(--earth);transform:rotate(-3deg);transform-origin:left center}
@@ -529,7 +552,7 @@ main.page{position:relative;overflow-x:clip}
 .eq-note{display:block;font-family:var(--hand);font-size:19px;color:var(--ink-soft)}
 .fstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:34px;border-top:1px solid var(--hairline);padding-top:18px}
 .fstats b{display:block;font-family:var(--display);font-weight:400;font-size:clamp(28px,3vw,38px);line-height:1}
-.fstats span{display:block;margin-top:6px;font-size:13.5px;line-height:1.45;color:var(--ink-soft);font-weight:300}
+.fstats span{display:block;margin-top:6px;font-size:13.5px;line-height:1.45;color:var(--ink-soft);font-weight:440}
 @media (max-width:820px){.founder{grid-template-columns:1fr}.fb{position:static}.fb svg{max-width:400px}}
 @media (max-width:480px){.fstats{grid-template-columns:1fr 1fr}.fstats div:last-child{grid-column:1/-1}}
 /* the diagram draws itself in when the section arrives */
@@ -561,7 +584,7 @@ main.page{position:relative;overflow-x:clip}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;margin:0 0 44px}
 .stat b{display:block;font-family:var(--display);font-weight:400;font-size:clamp(44px,5.4vw,68px);line-height:1;color:var(--ink)}
 .stat:first-child b{color:var(--earth)}
-.stat span{display:block;margin-top:8px;font-size:14.5px;line-height:1.5;color:var(--ink-soft);font-weight:300;max-width:22ch}
+.stat span{display:block;margin-top:8px;font-size:14.5px;line-height:1.5;color:var(--ink-soft);font-weight:440;max-width:22ch}
 @media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 20px}}
 .rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--hairline)}
 .row{display:grid;grid-template-columns:2.4em minmax(0,1.4fr) minmax(0,1fr) auto;gap:16px;align-items:baseline;
@@ -581,7 +604,7 @@ main.page{position:relative;overflow-x:clip}
 .course{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 24px;align-items:baseline;
   padding:20px 4px;border-bottom:1px solid var(--hairline)}
 .course .t{font-family:var(--display);font-size:clamp(22px,2.4vw,30px);line-height:1.15}
-.course .d{grid-column:1;font-size:15.5px;color:var(--ink-soft);font-weight:300}
+.course .d{grid-column:1;font-size:15.5px;color:var(--ink-soft);font-weight:440}
 .course .fee{grid-column:2;grid-row:1/3;text-align:right;align-self:center}
 .course .fee b{display:block;font-family:var(--hand);font-weight:700;font-size:34px;color:var(--earth);line-height:1}
 .course .fee span{font-size:12px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase}
@@ -591,7 +614,7 @@ main.page{position:relative;overflow-x:clip}
 }
 .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px;margin-top:36px}
 .mini{list-style:none;margin:0;padding:0}
-.mini li{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--hairline);font-size:16px;font-weight:300}
+.mini li{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--hairline);font-size:16px;font-weight:440}
 .mini li span:last-child{color:var(--ink-soft);text-align:right}
 .mini.ticks li{justify-content:flex-start}
 .mini.ticks li:before{content:"✓";font-family:var(--hand);font-weight:700;font-size:22px;color:var(--earth);line-height:1}
@@ -605,14 +628,24 @@ main.page{position:relative;overflow-x:clip}
   box-shadow:inset 0 0 0 1px var(--hairline)}
 .teacher b{display:block;font-family:var(--display);font-weight:400;font-size:22px}
 .teacher .sub{display:block;font-size:12px;letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--earth);margin:4px 0 6px}
-.teacher .q{display:block;font-size:14.5px;color:var(--ink-soft);font-weight:300;line-height:1.5}
+.teacher .q{display:block;font-size:14.5px;color:var(--ink-soft);font-weight:440;line-height:1.5}
+/* on a phone the teachers sit side by side, three to a row, centred, so
+   their photographs read as a row of portraits rather than a long column */
+@media (max-width:640px){
+  .teachers{display:flex;flex-wrap:wrap;justify-content:center;gap:28px 10px}
+  .teacher{flex:0 0 calc((100% - 20px) / 3);min-width:0;text-align:center}
+  .teacher .av{width:66px;height:66px;margin:0 auto 10px;font-size:24px}
+  .teacher b{font-size:17px;line-height:1.2}
+  .teacher .sub{font-size:9.5px;letter-spacing:.12em;line-height:1.5;margin:5px 0 4px}
+  .teacher .q{font-size:12px;line-height:1.4}
+}
 
 /* visit */
 .visit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(28px,5vw,60px);align-items:start}
-.addr{font-size:clamp(18px,1.8vw,21px);line-height:1.6;font-weight:300;margin:0 0 20px}
-.addr b{font-weight:500}
+.addr{font-size:clamp(18px,1.8vw,21px);line-height:1.6;font-weight:440;margin:0 0 20px}
+.addr b{font-weight:600}
 .meta{list-style:none;margin:0 0 26px;padding:0}
-.meta li{padding:9px 0;border-bottom:1px solid var(--hairline);font-size:16px;font-weight:300;display:flex;gap:14px}
+.meta li{padding:9px 0;border-bottom:1px solid var(--hairline);font-size:16px;font-weight:440;display:flex;gap:14px}
 .meta li span:first-child{min-width:84px;font-size:11px;letter-spacing:var(--track-caps);text-transform:uppercase;color:var(--ink-faint);padding-top:4px}
 .btns{display:flex;flex-wrap:wrap;gap:12px}
 .btn{display:inline-flex;align-items:center;gap:9px;border-radius:999px;padding:12px 20px;font-size:15px;letter-spacing:.02em;
@@ -643,6 +676,32 @@ main.page{position:relative;overflow-x:clip}
   opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .3s ease,transform .3s ease}
 .enquire.show{opacity:1;transform:none;pointer-events:auto}
 @media (max-width:640px){.enquire{right:12px;bottom:12px;padding:11px 16px;font-size:14px}}
+
+/* ---------------- legibility ----------------
+   The display serif comes in one slender weight, so headings carry a
+   hairline of their own colour around every letter: a touch heavier on
+   the page without changing the face.  Text also sits on a soft halo of
+   paper, so the sketches drifting behind it never cut through a letter. */
+.top .name,.plate .t,.row .t,.course .t,.why b,.teacher b,.pull p,.addr b{-webkit-text-stroke:.35px currentColor}
+.section-title{-webkit-text-stroke:.6px currentColor}
+.stat b,.fstats b{-webkit-text-stroke:.7px currentColor}
+main.page>section:not(.hero),.foot{text-shadow:0 0 .3em rgba(240,235,224,.95),0 0 .8em rgba(240,235,224,.75)}
+.hero-kicker,.sb-caption,.sb-hint,.sb-pages,.top nav{text-shadow:0 0 .35em rgba(240,235,224,.95),0 0 .8em rgba(240,235,224,.7)}
+.btn,.btn *,.map-tag,.fb,.fb *{text-shadow:none}
+.sb-caption{font-weight:600}
+.plate .p,.row .s,.course .fee span{color:var(--ink-soft);font-weight:500}
+.plate .n,.row .n{color:var(--ink-soft)}
+.bio-link{text-decoration-color:rgba(31,42,68,.45)}
+@media (max-width:640px){
+  .bio,.fstory p{font-size:17.5px}
+  .why span,.course .d{font-size:16px}
+  .stat span,.fstats span{font-size:14.5px}
+  .teacher .q{font-size:13px}
+  .teacher .sub{font-size:10px}
+  .sb-caption{font-size:12.5px}
+  .sb-hint{font-size:10.5px}
+  .top nav{font-size:13.5px}
+}
 </style>
 </head>
 <body>
@@ -694,12 +753,13 @@ main.page{position:relative;overflow-x:clip}
             <div class="sb-book" id="sbBook"></div>
           </div>
           <div class="zoomwrap" id="zoomWrap" aria-hidden="true"><div class="zoominner" id="zoomInner"></div></div>
-          <div class="loupe" id="loupe"><span class="grip"></span><span class="ring"><span class="lens" id="loupeLens"><span class="mag" id="loupeMag"></span></span></span></div>
+          <div class="loupe" id="loupe"><span class="loupe-tag" aria-hidden="true">drag the glass ↗</span><span class="grip"></span><span class="ring"><span class="lens" id="loupeLens"><span class="mag" id="loupeMag"></span></span></span></div>
         </div>
         <button class="sb-arrow right" id="sbRight" aria-label="next page">
           <svg viewBox="0 0 14 44" width="14" height="44" fill="none" aria-hidden="true"><polyline points="3,3 11,22 3,41" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
+      <p class="sb-pages" id="sbPages"></p>
       <div class="sb-captions" id="sbCaptions"><p class="sb-caption">Opening the notebook…</p></div>
       <div class="sb-tools" role="group" aria-label="view controls">
         <button class="tool" id="zOut" aria-label="zoom out"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8.6" cy="8.6" r="5.6"/><path d="M12.8 12.8 17.4 17.4M6.2 8.6h4.8"/></svg></button>
@@ -960,7 +1020,8 @@ const capBox=document.getElementById('sbCaptions');
 const hint=document.getElementById('sbHint');
 const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* there is no glass on a touch screen, so the hint says what does work */
-if(matchMedia('(pointer: coarse)').matches)hint.textContent='Swipe the page to turn · Zoom in to read the marks';
+if(matchMedia('(max-width: 640px)').matches)hint.textContent='Tap or swipe to turn the page · Drag the glass to read up close';
+else if(matchMedia('(pointer: coarse)').matches)hint.textContent='Swipe the page to turn · Drag the glass over the marks';
 
 /* ------------------------------------------------ the turning leaf */
 const N=18;            /* strips — enough for a smooth curve          */
@@ -1087,8 +1148,8 @@ function animateTo(target,onDone,stiff,damp){
   kick();
 }
 /* the riffle wants a fixed tempo, not a spring settling time */
-function tweenTo(target,dur,onDone){
-  spring={kind:'tween',from:turn?turn.t:0,target:target,dur:dur,e:0,done:onDone};
+function tweenTo(target,dur,onDone,ease){
+  spring={kind:'tween',from:turn?turn.t:0,target:target,dur:dur,e:0,done:onDone,ease:ease};
   kick();
 }
 let raf=null,last=0;
@@ -1100,7 +1161,7 @@ function tick(now){
     if(s.kind==='tween'){
       s.e+=dt;
       const k=Math.min(1,s.e/s.dur);
-      turn.t=s.from+(s.target-s.from)*k;
+      turn.t=s.from+(s.target-s.from)*(s.ease?s.ease(k):k);
       applyTurn(turn.t);
       if(k>=1){spring=null;const d=s.done;d&&d();}
     }else{
@@ -1186,6 +1247,9 @@ stage.addEventListener('pointerdown',e=>{
   stage.setPointerCapture(e.pointerId);
   hideHint();
   if(!onBook||introOn||!M)return;
+  /* on a phone the book shows one page at a time: a swipe or a tap on
+     the edge moves on, and the paper only turns between spreads */
+  if(phone()){swipe={x:e.clientX,y:e.clientY};return;}
   const r=bookRect();
   const dir=(e.clientX-r.left)/r.width>0.5?'next':'prev';
   startTurn(dir,0);
@@ -1203,6 +1267,18 @@ stage.addEventListener('pointermove',e=>{
   if(turn){turn.t=t;applyTurn(t);}
 });
 function endDrag(e){
+  if(swipe){
+    const s=swipe;swipe=null;
+    if(e.type!=='pointerup')return;
+    const dx=e.clientX-s.x, dy=e.clientY-s.y;
+    if(Math.abs(dx)>36&&Math.abs(dx)>Math.abs(dy)*1.2){step(dx<0?'next':'prev');return;}
+    if(Math.abs(dx)<10&&Math.abs(dy)<10){
+      /* a tap: right part of the page turns forward, left part back */
+      const r=stage.getBoundingClientRect(), fx=(e.clientX-r.left)/r.width;
+      if(fx>0.5)step('next');else step('prev');
+    }
+    return;
+  }
   if(!drag)return;
   const d=drag;drag=null;
   if(!turn)return;
@@ -1229,9 +1305,16 @@ function startTurn(dir,t){
 function commit(){
   if(!turn)return;
   if(REDUCED){idx=turn.to;turn=null;paint();return;}
-  animateTo(1,()=>{idx=turn.to;turn=null;paint();},170,26);
+  const land=()=>{idx=turn.to;turn=null;paint();};
+  /* On a phone the page is the whole show, so it turns slowly enough to
+     watch: it lifts gently, sweeps over, and settles (PHONE_TURN).  The
+     desktop keeps its quicker spring. */
+  if(phone())tweenTo(1,PHONE_TURN*(1-turn.t),land,easeInOut);
+  else animateTo(1,land,170,26);
   kick();
 }
+const PHONE_TURN=1.4;   /* seconds for a full page turn on a phone */
+function easeInOut(k){return k<0.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2}
 function cancel(){
   if(!turn)return;
   animateTo(0,()=>{turn=null;paint();},150,24);
@@ -1243,6 +1326,24 @@ function step(dir){
   if(turn){ /* finish whatever is in flight first */ idx=turn.to;turn=null; }
   startTurn(dir,0);commit();
 }
+/* ------------------------------------------- a single-page book on a phone
+   On a phone the book is built one page per image (spreads.js), each page
+   drawn on the right-hand side, and the wide book is shifted so only that
+   right-hand page shows.  Turning is then the ordinary curl: the page
+   lifts off to the left and the next one is underneath.  Nothing slides. */
+const PHONE=matchMedia('(max-width: 640px)');
+function phone(){return PHONE.matches}
+let swipe=null;
+const pageNo=document.getElementById('sbPages');
+function fitBook(){
+  sb3d.style.transform=phone()
+    ?'translate3d('+(stage.clientWidth/2-book.clientWidth*0.7245).toFixed(1)+'px,0,0)':'';
+}
+function go(dir){step(dir)}
+/* turning a phone sideways past the breakpoint swaps which book is shown */
+let modeTimer=null;
+PHONE.addEventListener('change',()=>{clearTimeout(modeTimer);modeTimer=setTimeout(()=>loadBook(),150);});
+
 function goTo(i){
   if(!M)return;
   if(introOn)endIntro();
@@ -1252,15 +1353,15 @@ function goTo(i){
   if(Math.min(fwd,back)===1){step(fwd===1?'next':'prev');return;}
   idx=i;paint();
 }
-document.getElementById('sbLeft').onclick=()=>step('prev');
-document.getElementById('sbRight').onclick=()=>step('next');
+document.getElementById('sbLeft').onclick=()=>go('prev');
+document.getElementById('sbRight').onclick=()=>go('next');
 addEventListener('keydown',e=>{
   if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
   if(e.metaKey||e.ctrlKey||e.altKey)return;
   const t=e.target;
   if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
   e.preventDefault();hideHint();
-  step(e.key==='ArrowRight'?'next':'prev');
+  go(e.key==='ArrowRight'?'next':'prev');
 });
 document.getElementById('heroDown').onclick=()=>{
   document.getElementById('about').scrollIntoView({behavior:'smooth',block:'start'});
@@ -1277,16 +1378,29 @@ const MAG=2.3;
 const DESK=getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()||'#ece7dc';
 let loupeOn=true, lx=null, ly=null, lgrab=null, lTarget=null;
 
-function loupeSize(){return Math.round(Math.max(165,Math.min(262,book.clientWidth*0.235)));}
+function loupeSize(){
+  if(phone())return Math.round(Math.max(118,Math.min(156,stage.clientWidth*0.36)));
+  return Math.round(Math.max(165,Math.min(262,book.clientWidth*0.235)));
+}
 /* the loupe's own coordinate space: stage pixels in live mode (it sits
    outside the book's transform), book pixels otherwise */
 function bookBox(){
   return {x:0,y:0,w:book.clientWidth,h:book.clientHeight};
 }
-/* park it on the desk at the lower right, half off the book */
-function restLoupe(){
+/* Where the glass rests: on the outer edge of the page in view, level with
+   the middle of the paper, so it is seen at once and already shows a
+   sliver of magnified page.  (Parked at the book's lower corner, as it
+   first was, it fell below the fold on most laptop screens.) */
+function restTarget(){
   const b=bookBox();
-  lx=b.x+b.w*0.88; ly=b.y+b.h*0.855;
+  /* on a phone it waits at the page's top corner: clear of a swiping thumb,
+     and of the name, marks and percentage lower down */
+  const fx=phone()?0.91:0.958;
+  return {x:b.x+b.w*fx, y:b.y+b.h*(phone()?0.255:0.63)};
+}
+function restLoupe(){
+  const t=restTarget();
+  lx=t.x; ly=t.y;
   placeLoupe();
 }
 /* The glass sits above the tilt, in the book's untransformed pixels, so the
@@ -1341,12 +1455,14 @@ function placeLoupe(){
 }
 /* the leaf shoves the glass aside as it sweeps past */
 function shoveLoupe(dir){
-  if(!loupeOn||lx===null||lgrab)return;
+  if(!loupeOn||lx===null||lgrab||phone())return;    /* on a phone it waits above the page's corner */
   const b=bookBox();
   /* which page point the glass covers, once the book's scale is undone */
   const nx=(b.w/2+(lx-b.x-b.w/2)/view.z)/b.w, ny=(b.h/2+(ly-b.y-b.h/2)/view.z)/b.h;
   if(nx<0.02||nx>0.98||ny<0.17||ny>0.83)return;      /* already clear of the page */
-  lTarget={x:b.x+b.w*(dir==='next'?0.12:0.88), y:b.y+b.h*0.855};
+  /* aside to the page's outer edge, level with the paper so it stays on
+     screen, rather than down below the book where it used to go */
+  lTarget={x:b.x+b.w*(dir==='next'?0.985:0.015), y:b.y+b.h*0.52};
   kick();
 }
 function loupeEase(){
@@ -1362,7 +1478,7 @@ loupe.addEventListener('pointerdown',e=>{
   e.preventDefault();e.stopPropagation();     /* never starts a page turn */
   lTarget=null;
   lgrab={cx:e.clientX,cy:e.clientY,lx0:lx,ly0:ly};
-  loupe.classList.add('held');
+  loupe.classList.add('held','used');
   loupe.setPointerCapture(e.pointerId);
   hideHint();
 });
@@ -1383,7 +1499,7 @@ loupeBtn.onclick=()=>{
   loupe.classList.toggle('on',loupeOn);
   if(loupeOn&&lx===null)restLoupe();
 };
-addEventListener('resize',()=>{if(!M)return;lx=null;restLoupe();});
+addEventListener('resize',()=>{fitBook();if(!M)return;lx=null;restLoupe();});
 
 function syncZoom(){
   zRead.textContent=Math.round(view.tz*100)+'%';
@@ -1395,21 +1511,32 @@ zOutBtn.onclick=()=>{setView(view.trx,view.try_,view.tz/1.16);hideHint();};
 
 /* --------------------------------------------------------- the index */
 const plateList=document.getElementById('plateList');
+/* Each page lists the index rows it carries (spreads.js): a topper spread
+   gives a row to each student, and on a phone each student's own page
+   carries their row.  A row with "span" also covers the page after it. */
 function buildIndex(){
+  let n=0;
   PAGES.forEach((p,i)=>{
-    const li=el('li');
-    const b=el('button','plate');
-    b.innerHTML='<span class="n">'+String(i+1).padStart(2,'0')+'</span>'+
-                '<span class="t"></span><span class="p"></span>';
-    b.querySelector('.t').textContent=p.title;
-    b.querySelector('.p').textContent=p.place;
-    b.onclick=()=>{goTo(i);document.getElementById('sketchbook').scrollIntoView({behavior:'smooth',block:'center'});};
-    li.appendChild(b);plateList.appendChild(li);
+    p.rows.forEach(r=>{
+      const li=el('li');
+      const b=el('button','plate');
+      b.dataset.page=i;if(r.span)b.dataset.span='1';
+      b.innerHTML='<span class="n">'+String(++n).padStart(2,'0')+'</span>'+
+                  '<span class="t"></span><span class="p"></span>';
+      b.querySelector('.t').textContent=r.title;
+      b.querySelector('.p').textContent=r.place;
+      b.onclick=()=>{goTo(i);document.getElementById('sketchbook').scrollIntoView({behavior:'smooth',block:'center'});};
+      li.appendChild(b);plateList.appendChild(li);
+    });
   });
 }
 function marks(){
   const cur=turn?turn.to:idx;
-  plateList.querySelectorAll('.plate').forEach((b,i)=>b.setAttribute('aria-current',i===cur?'true':'false'));
+  plateList.querySelectorAll('.plate').forEach(b=>{
+    const p=+b.dataset.page, on=cur===p||(b.dataset.span&&cur===p+1);
+    b.setAttribute('aria-current',on?'true':'false');
+  });
+  if(pageNo)pageNo.textContent=phone()&&PAGES.length?'Page '+(cur+1)+' of '+PAGES.length:'';
 }
 
 /* ---------------------------------------------------------- the riffle */
@@ -1442,15 +1569,29 @@ function startIntro(){
 }
 
 /* ------------------------------------------------------------- boot */
-(async function boot(){
-  /* the cover arrives first; turning stays locked (M=0) until every
-     spread has been drawn */
-  const nb=await buildSpreads(D,'assets/img/egp-mark.svg');
-  PAGES=nb.pages;
-  buildIndex();
-  paint();applyView();
+/* Build the book for this screen: spreads on a desktop, single pages on a
+   phone.  The cover arrives first; turning stays locked (M=0) until every
+   page has been drawn.  Called again if the phone is turned sideways. */
+let building=0;
+async function loadBook(){
+  const mine=++building;
+  M=0;spring=null;turn=null;if(introOn)endIntro();
+  const nb=await buildSpreads(D,'assets/img/egp-mark.svg',phone());
+  if(mine!==building)return false;          /* a newer build took over */
+  const old=PAGES;
+  PAGES=nb.pages;idx=0;
+  plateList.textContent='';buildIndex();
+  paint();applyView();fitBook();
+  old.forEach(p=>{if(p.url&&p.url.startsWith('blob:'))URL.revokeObjectURL(p.url);});
   await nb.done;
-  M=PAGES.length;
+  if(mine!==building)return false;
+  M=PAGES.length;marks();
+  if(lx!==null){lx=null;restLoupe();}
+  return true;
+}
+
+(async function boot(){
+  await loadBook();
   if(Q.has('shot')){idx=(parseInt(Q.get('shot'),10)||0)%M;paint();}
   await Promise.all(PAGES.map(p=>{
     const im=new Image();im.src=p.url;
