@@ -7,6 +7,14 @@
 <meta name="description" content="Education Galaxy Point (EGP), Chas, Bokaro — affordable classroom coaching for Class 11 and 12 Science and Commerce. Small batches, weekly tests and toppers every year.">
 <meta name="theme-color" content="#ece7dc">
 <link rel="icon" href="assets/img/egp-mark.svg" type="image/svg+xml">
+<!-- the notebook is drawn with these, so fetch them first, not when it asks -->
+<link rel="preload" href="assets/fonts/caveat-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/caveat-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/caveat-ext-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/caveat-ext-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/img/egp-mark.svg" as="image">
 <meta property="og:title" content="Education Galaxy Point (EGP) — Chas, Bokaro">
 <meta property="og:description" content="Affordable Class 11 & 12 coaching. Flip through this year's results notebook.">
 <script type="application/ld+json">
@@ -880,7 +888,6 @@ main.page>section:not(.hero),.foot{text-shadow:0 0 .3em rgba(240,235,224,.95),0 
 
 <a class="btn enquire" id="enquireBtn" data-link="whatsapp" href="#">Admissions open · Enquire</a>
 
-<script src="js/doodles.js"></script>
 <script src="js/data.js"></script>
 <script src="js/spreads.js"></script>
 <script>
@@ -1024,7 +1031,7 @@ if(matchMedia('(max-width: 640px)').matches)hint.textContent='Tap or swipe to tu
 else if(matchMedia('(pointer: coarse)').matches)hint.textContent='Swipe the page to turn · Drag the glass over the marks';
 
 /* ------------------------------------------------ the turning leaf */
-const N=18;            /* strips — enough for a smooth curve          */
+let N=18;              /* strips — enough for a smooth curve (12 on a phone, set per turn) */
 const SPAN=0.449;      /* gutter → outer page edge, as a fraction     */
 const BETA=0.60;       /* peak curl of the arc, radians              */
 let idx=0, turn=null;  /* turn = {dir, from, to, t}                   */
@@ -1045,6 +1052,7 @@ function halfEl(pos,i){
 /* build the strip chain once per turn; background offsets are pure
    geometry, so they never need touching again while it animates */
 function buildCurl(dir,from,to){
+  N=phone()?12:18;      /* a phone page is narrower on screen: fewer strips, less to draw */
   strips=[];
   const c=el('div','curl '+dir);
   c.style.setProperty('--n',N);
@@ -1236,7 +1244,7 @@ stage.addEventListener('dblclick',()=>setView(view.trx,view.try_,1));
 /* ------------------------------------------------------- pointer work */
 let drag=null;
 function bookRect(){return book.getBoundingClientRect()}
-function hideHint(){hint.classList.add('gone')}
+function hideHint(){hint.classList.add('gone');acted=true}
 
 stage.addEventListener('pointerdown',e=>{
   if(e.button!==0)return;
@@ -1252,6 +1260,9 @@ stage.addEventListener('pointerdown',e=>{
   if(phone()){swipe={x:e.clientX,y:e.clientY};return;}
   const r=bookRect();
   const dir=(e.clientX-r.left)/r.width>0.5?'next':'prev';
+  acted=true;
+  /* the page underneath isn't drawn yet: turn it as a tap once it is */
+  if(!PAGES[target(dir)].url){step(dir);return;}
   startTurn(dir,0);
   drag={dir:dir,x0:e.clientX,w:r.width,moved:0,vel:0,tPrev:performance.now()};
 });
@@ -1306,23 +1317,40 @@ function commit(){
   if(!turn)return;
   if(REDUCED){idx=turn.to;turn=null;paint();return;}
   const land=()=>{idx=turn.to;turn=null;paint();};
-  /* On a phone the page is the whole show, so it turns slowly enough to
-     watch: it lifts gently, sweeps over, and settles (PHONE_TURN).  The
-     desktop keeps its quicker spring. */
-  if(phone())tweenTo(1,PHONE_TURN*(1-turn.t),land,easeInOut);
+  /* On a phone the turn answers the tap at once: the page leaps up and
+     over, then eases down onto the next one (PHONE_TURN).  The desktop
+     keeps its spring. */
+  if(phone())tweenTo(1,PHONE_TURN*(1-turn.t),land,easeOut);
   else animateTo(1,land,170,26);
   kick();
 }
-const PHONE_TURN=1.4;   /* seconds for a full page turn on a phone */
-function easeInOut(k){return k<0.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2}
+const PHONE_TURN=0.5;   /* seconds for a full page turn on a phone */
+function easeOut(k){return 1-Math.pow(1-k,3)}
 function cancel(){
   if(!turn)return;
   animateTo(0,()=>{turn=null;paint();},150,24);
   kick();
 }
+/* Pages are drawn in the background after the cover (spreads.js).  If the
+   page a turn needs isn't drawn yet, ask for it (it jumps the queue) and
+   turn the moment it lands; a second tap while waiting is not stacked. */
+let pageReady=null, waiting=false, acted=false;
+function target(dir){const from=turn?turn.to:idx;return dir==='next'?(from+1)%M:(from-1+M)%M}
+function whenReady(i,then){
+  if(PAGES[i]&&PAGES[i].url){then();return true;}
+  if(waiting||!pageReady)return false;
+  waiting=true;
+  const book=building;
+  pageReady(i).then(()=>{waiting=false;if(book===building)then();});
+  return false;
+}
 function step(dir){
   if(!M)return;
+  acted=true;
   if(introOn)endIntro();
+  /* where this turn lands, counting from any turn still in flight; if that
+     page isn't drawn yet, wait without disturbing the turn in progress */
+  if(!PAGES[target(dir)].url){whenReady(target(dir),()=>step(dir));return;}
   if(turn){ /* finish whatever is in flight first */ idx=turn.to;turn=null; }
   startTurn(dir,0);commit();
 }
@@ -1346,11 +1374,13 @@ PHONE.addEventListener('change',()=>{clearTimeout(modeTimer);modeTimer=setTimeou
 
 function goTo(i){
   if(!M)return;
+  acted=true;
   if(introOn)endIntro();
   if(i===idx)return;
   if(turn){idx=turn.to;turn=null;}
   const fwd=(i-idx+M)%M, back=(idx-i+M)%M;
   if(Math.min(fwd,back)===1){step(fwd===1?'next':'prev');return;}
+  if(!PAGES[i].url){whenReady(i,()=>goTo(i));return;}
   idx=i;paint();
 }
 document.getElementById('sbLeft').onclick=()=>go('prev');
@@ -1414,6 +1444,9 @@ function syncZoomLayer(){
   zoomInner.textContent='';
   for(const c of book.children){
     if(c.classList.contains('sb-zone'))continue;      /* hit targets need no copy */
+    /* on a phone the curling leaf (36 pieces) isn't copied: the turn is
+       over in half a second, and copying it would slow the tap's start */
+    if(phone()&&c.classList.contains('curl'))continue;
     zoomInner.appendChild(c.cloneNode(true));
   }
 }
@@ -1570,41 +1603,47 @@ function startIntro(){
 
 /* ------------------------------------------------------------- boot */
 /* Build the book for this screen: spreads on a desktop, single pages on a
-   phone.  The cover arrives first; turning stays locked (M=0) until every
-   page has been drawn.  Called again if the phone is turned sideways. */
+   phone.  Only the cover is waited for: the book, its turning and the
+   magnifier are live as soon as it lands, and the other pages are drawn
+   in the background.  Called again if the phone is turned sideways. */
 let building=0;
 async function loadBook(){
   const mine=++building;
-  M=0;spring=null;turn=null;if(introOn)endIntro();
+  M=0;spring=null;turn=null;waiting=false;if(introOn)endIntro();
   const nb=await buildSpreads(D,'assets/img/egp-mark.svg',phone());
-  if(mine!==building)return false;          /* a newer build took over */
+  if(mine!==building)return null;           /* a newer build took over */
   const old=PAGES;
-  PAGES=nb.pages;idx=0;
+  PAGES=nb.pages;idx=0;pageReady=nb.ready;M=PAGES.length;
   plateList.textContent='';buildIndex();
   paint();applyView();fitBook();
   old.forEach(p=>{if(p.url&&p.url.startsWith('blob:'))URL.revokeObjectURL(p.url);});
-  await nb.done;
-  if(mine!==building)return false;
-  M=PAGES.length;marks();
-  if(lx!==null){lx=null;restLoupe();}
-  return true;
+  syncZoom();lx=null;restLoupe();
+  document.body.dataset.ready='1';
+  /* the background sketches are decoration: drawn once the page after the
+     cover is ready, so they never hold up the first turn */
+  if(!document.getElementById('doodlesJs')){
+    const add=()=>{if(document.getElementById('doodlesJs'))return;
+      const s=document.createElement('script');s.id='doodlesJs';s.src='js/doodles.js';document.body.appendChild(s);};
+    if(PAGES.length>1)nb.ready(1).then(add);else add();
+    setTimeout(add,2500);
+  }
+  /* wrapped: an async function returning the promise itself would make
+     the caller wait for every page */
+  return {done:nb.done};
 }
 
 (async function boot(){
-  await loadBook();
-  if(Q.has('shot')){idx=(parseInt(Q.get('shot'),10)||0)%M;paint();}
-  await Promise.all(PAGES.map(p=>{
-    const im=new Image();im.src=p.url;
-    return im.decode?im.decode().catch(()=>{}):new Promise(r=>{im.onload=im.onerror=r});
-  }));
-  if(document.fonts&&document.fonts.ready)await document.fonts.ready.catch(()=>{});
-  syncZoom();restLoupe();
-  document.body.dataset.ready='1';
+  const built=await loadBook(), done=built&&built.done;
   if(Q.has('shot')){
+    await done;
+    idx=(parseInt(Q.get('shot'),10)||0)%M;paint();
     if(Q.has('t')){startTurn(Q.get('dir')||'next',parseFloat(Q.get('t')));}
     return;
   }
-  setTimeout(startIntro,220);
+  /* the flip-through intro needs every page, so it waits for them, and
+     is skipped if the visitor has already started turning */
+  const book=building;
+  if(done)done.then(()=>{if(!acted&&book===building)setTimeout(startIntro,120);});
 })();
 </script>
 </body>

@@ -44,17 +44,20 @@
     x.save(); x.translate(0, 4); bookPath(x, X0 + 2, Y0, X1 - 2, Y1, R); x.fillStyle = '#e8e0ce'; x.fill(); x.restore();
     bookPath(x, X0, Y0, X1, Y1, R); x.fillStyle = '#f5f0e5'; x.fill();
 
-    /* cold-press grain */
-    const r = rng(7), id = x.getImageData(X0, Y0, X1 - X0, Y1 - Y0), d = id.data, w = X1 - X0;
-    for (let i = 0; i < d.length; i += 4) {
-      if (!d[i + 3]) continue;
-      const p = i / 4, px = p % w, py = (p / w) | 0;
-      const n = (r() - 0.5) * 11 + Math.sin(px * 0.021 + Math.sin(py * 0.013) * 3) * 1.6;
-      d[i] += n; d[i + 1] += n; d[i + 2] += n * 0.9;
-    }
-    x.putImageData(id, X0, Y0);
-
     x.save(); bookPath(x, X0, Y0, X1, Y1, R); x.clip();
+    /* cold-press grain: one small tile of light and dark specks, repeated
+       over the paper (far quicker than speckling every pixel by hand, and
+       this sits on the path to the cover appearing) */
+    const T = 256, tile = document.createElement('canvas'); tile.width = tile.height = T;
+    const tx = tile.getContext('2d'), id = tx.createImageData(T, T), d = id.data, r = rng(7);
+    for (let i = 0; i < d.length; i += 4) {
+      const n = r() - 0.5;
+      d[i] = d[i + 1] = n > 0 ? 255 : 40; d[i + 2] = n > 0 ? 250 : 30;
+      d[i + 3] = Math.abs(n) * 26;
+    }
+    tx.putImageData(id, 0, 0);
+    x.fillStyle = x.createPattern(tile, 'repeat'); x.fillRect(X0, Y0, X1 - X0, Y1 - Y0);
+
     /* the gutter falls away into shadow */
     let g = x.createLinearGradient(G - 170, 0, G + 170, 0);
     g.addColorStop(0, 'rgba(92,70,38,0)'); g.addColorStop(0.36, 'rgba(92,70,38,.06)');
@@ -476,14 +479,19 @@
   function load(src) {
     return new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
   }
+  /* PNG, not WebP: the pages never leave the visitor's browser, so file
+     size hardly matters, and a PNG encodes about six times faster (about
+     0.25 s a page on a slow phone against 1.6 s), which is what decides
+     how soon the notebook can be turned. */
   function toURL(c) {
-    return new Promise(res => c.toBlob(b => res(b ? URL.createObjectURL(b) : c.toDataURL()), 'image/webp', 0.92));
+    return new Promise(res => c.toBlob(b => res(b ? URL.createObjectURL(b) : c.toDataURL()), 'image/png'));
   }
 
   /* every spread as a plain canvas — used by tools/spreads.html to check
      the whole notebook at a glance after editing data.js */
   window.drawSpreadCanvases = async function (D, logoSrc) {
-    const { pages } = await prepare(D, logoSrc);
+    const { pages, A } = await prepare(D, logoSrc);
+    await A.loaded;
     const p = paper();
     return pages.map(pg => {
       const c = canvas(), x = c.getContext('2d');
@@ -501,7 +509,7 @@
      reveal the next page underneath, with no sliding.
      Each page also says which index rows it carries ("rows"). */
   window.buildSpreads = async function (D, logoSrc, single) {
-    const { pages: spreads } = await prepare(D, logoSrc);
+    const { pages: spreads, A } = await prepare(D, logoSrc);
     const p = paper();
     let pages;
     if (!single) {
@@ -521,11 +529,14 @@
       }));
     }
 
-    /* The cover is drawn first so the book can open at once; the rest
-       follow one at a time, yielding between them so the page stays
-       responsive on a slow phone. */
+    /* Pages are drawn on demand.  Only the cover is waited for; the book
+       opens and turns at once while the rest are drawn in the background,
+       in order, two compressing at a time (the image encoding runs off the
+       main thread, so the next page can be drawn while one is encoding).
+       Turning to a page that isn't ready yet asks for it with ready(i),
+       which moves it to the front of the queue. */
     let ink = null;   /* the spread last drawn without its paper, for single pages */
-    const render = async pg => {
+    const draw = pg => {
       const c = canvas(), x = c.getContext('2d');
       x.drawImage(p, 0, 0);
       if (!single) pg.draw(x);
@@ -536,30 +547,54 @@
         /* lift this page's ink off its own side and set it on the right */
         x.drawImage(ink.c, pg.h ? Rp.x : L.x, 0, L.w, H, Rp.x, 0, L.w, H);
       }
-      pg.url = await toURL(c);
-      delete pg.draw; delete pg.sp;
+      return c;
     };
-    await render(pages[0]);
-    const done = (async () => {
-      for (const pg of pages.slice(1)) {
-        await new Promise(r => setTimeout(r, 0));
-        await render(pg);
+    const jobs = [];
+    const ready = i => {
+      if (!jobs[i]) {
+        /* the cover needs no photographs; every other page waits for them */
+        const pg = pages[i];
+        jobs[i] = (i === 0 ? Promise.resolve() : A.loaded).then(() => toURL(draw(pg)))
+          .then(url => { pg.url = url; delete pg.draw; delete pg.sp; return url; });
       }
+      return jobs[i];
+    };
+    await ready(0);
+    const done = (async () => {
+      /* the page after the cover is the first one anyone asks for, so it
+         is drawn alone and at once; the rest then go two at a time */
+      if (pages.length > 1) await ready(1);
+      const busy = new Set();
+      for (let i = 1; i < pages.length; i++) {
+        if (jobs[i]) continue;
+        await new Promise(r => setTimeout(r, 0));          /* let taps and scrolling through */
+        if (jobs[i]) continue;
+        const job = ready(i);
+        busy.add(job); job.then(() => busy.delete(job));
+        if (busy.size >= 2) await Promise.race(busy);
+      }
+      await Promise.all(jobs);
       ink = null;
       return pages;
     })();
-    return { pages, done };
+    return { pages, ready, done };
   };
 
   async function prepare(D, logoSrc) {
+    /* the fonts and the logo are all the cover needs; the photographs load
+       alongside and are waited for only by the pages that show them */
+    const A = { photos: {} };
+    const logo = load(logoSrc).then(im => { A.logo = im; });
+    A.loaded = Promise.all([
+      ...D.featured.filter(t => t.photo).map(t => load(t.photo).then(im => { A.photos[t.name] = im; })),
+      D.founder && D.founder.photo ? load(D.founder.photo).then(im => { A.founder = im; }) : null
+    ]);
     if (document.fonts) {
       await Promise.all([
         '400 40px Caveat', '700 40px Caveat', '400 40px "Instrument Serif"', '500 22px Newsreader'
       ].map(f => document.fonts.load(f, 'Aa1₹').catch(() => {})));
     }
-    const A = { logo: await load(logoSrc), photos: {} };
-    await Promise.all(D.featured.filter(t => t.photo).map(async t => { A.photos[t.name] = await load(t.photo); }));
-    if (D.founder && D.founder.photo) A.founder = await load(D.founder.photo);
+    await logo;
 
     const pages = [];
     const add = (draw, meta) => pages.push({ draw, ...meta });
@@ -599,6 +634,6 @@
       alt: 'Admissions open for session ' + D.session + '. ' + D.address.line1 + ', ' + D.address.line2
     });
 
-    return { pages };
+    return { pages, A };
   }
 })();
